@@ -34,9 +34,9 @@ jobs:
 
       - name: 5. Construir y Publicar API Ventas en AWS ECR
         run: |
-          # Revisa en tu VS Code si Ventas tiene una subcarpeta interna parecida; si no, déjala así:
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot || docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST-VENTAS
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com/api-ventas:latest || docker push ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest
+          # Probamos con la subcarpeta en minúsculas/mayúsculas común, o la ruta base si el Dockerfile está afuera
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST-VENTAS || docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST-VENTA || docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot
+          docker push ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest
 
       - name: 6. Construir y Publicar Frontend en AWS ECR
         run: |
