@@ -1,70 +1,61 @@
 version: '3.8'
 
 services:
-  # --- CONTENEDOR 0: LA BASE DE DATOS (MYSQL) ---
-  base-datos:
+  # Base de Datos (MySQL) - Se construye igual en local y nube
+  db:
     image: mysql:8.0
-    container_name: container-mysql
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ordenes_db
     ports:
       - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: mi_base_datos  # <--- Cambia esto por el nombre real de tu BD
-      MYSQL_USER: usuario_api
-      MYSQL_PASSWORD: userpassword
     volumes:
       - datos-mysql:/var/lib/mysql
-    networks:
-      - red-proyecto
+      - ./db:/docker-entrypoint-initdb.d
 
-  # --- CONTENEDOR 1: BACKEND DESPACHOS ---
-  api-despachos:
-    container_name: container-despachos
+  # API Ventas
+  back-ventas:
+    # En local Docker la compilará, en AWS usará la imagen del AWS CLI (ECR)
+    image: 711817139890.dkr.ecr.TU_REGION.amazonaws.com/api-ventas:latest
     build:
-      context: ./back-Despachos_SpringBoot/Springboot-API-REST-DESPACHO
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    restart: always
-    depends_on:
-      - base-datos  # Espera a que la BD levante
-    networks:
-      - red-proyecto
-
-  # --- CONTENEDOR 2: BACKEND VENTAS ---
-  api-ventas:
-    container_name: container-ventas
-    build:
-      context: ./back-Ventas_SpringBoot/Springboot-API-REST
-      dockerfile: Dockerfile
+      context: ./back-Ventas_SpringBoot
+    container_name: api-ventas-container
     ports:
       - "8081:8081"
-    restart: always
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/ordenes_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
     depends_on:
-      - base-datos  # Espera a que la BD levante
-    networks:
-      - red-proyecto
+      - db
 
-  # --- CONTENEDOR 3: FRONTEND ---
-  frontend-app:
-    container_name: container-front
+  # API Despachos
+  back-despachos:
+    image: 711817139890.dkr.ecr.TU_REGION.amazonaws.com/api-despachos:latest
+    build:
+      context: ./back-Despachos_SpringBoot
+    container_name: api-despachos-container
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/ordenes_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    depends_on:
+      - db
+
+  # Frontend (React)
+  frontend:
+    image: 711817139890.dkr.ecr.TU_REGION.amazonaws.com/frontend-app:latest
     build:
       context: ./front_despacho
-      dockerfile: Dockerfile
+    container_name: react-frontend-container
     ports:
-      - "80:80"
-    restart: always
+      - "3000:3000"
     depends_on:
-      - api-despachos
-      - api-ventas
-    networks:
-      - red-proyecto
+      - back-ventas
+      - back-despachos
 
-# --- VOLÚMENES PARA NO PERDER LOS DATOS ---
 volumes:
   datos-mysql:
-
-# --- RED INTERNA DE DOCKER ---
-networks:
-  red-proyecto:
-    driver: bridge
