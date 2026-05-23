@@ -34,15 +34,14 @@ jobs:
 
       - name: 5. Construir y Publicar API Ventas en AWS ECR
         run: |
-          # Probamos con la subcarpeta en minúsculas/mayúsculas común, o la ruta base si el Dockerfile está afuera
-          docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST-VENTAS || docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST-VENTA || docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot
+          docker build -t ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest ./back-Ventas_SpringBoot/Springboot-API-REST
           docker push ${{ steps.login-ecr.outputs.registry }}/api-ventas:latest
 
       - name: 6. Construir y Publicar Frontend en AWS ECR
         run: |
           docker build -t ${{ steps.login-ecr.outputs.registry }}/frontend-app:latest ./front_despacho
           docker push ${{ steps.login-ecr.outputs.registry }}/frontend-app:latest
-
+          
   deploy-to-ec2:
     name: Conectarse a AWS EC2 y Desplegar
     runs-on: ubuntu-latest
