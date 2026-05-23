@@ -1,0 +1,73 @@
+name: Pipeline CI/CD - Despliegue Automático
+
+# TRIGGER: La rúbrica exige que se active solo en la rama 'deploy'
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  # ------------------------------------------------------------------
+  # ETAPA 1: CONSTRUCCIÓN Y PUBLICACIÓN EN DOCKER HUB
+  # ------------------------------------------------------------------
+  build-and-push:
+    name: Compilar Dockerfiles y Publicar Imágenes
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Descargar el código desde GitHub
+        uses: actions/checkout@v3
+
+      - name: 2. Autenticarse en Docker Hub (Uso de Secrets)
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 3. Construir y Publicar API Despachos
+        uses: docker/build-push-action@v4
+        with:
+          context: ./back-Despachos_SpringBoot
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-despachos:latest
+
+      - name: 4. Construir y Publicar API Ventas
+        uses: docker/build-push-action@v4
+        with:
+          context: ./back-Ventas_SpringBoot
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-ventas:latest
+
+      - name: 5. Construir y Publicar Frontend React
+        uses: docker/build-push-action@v4
+        with:
+          context: ./front_despacho
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/frontend-app:latest
+
+  # ------------------------------------------------------------------
+  # ETAPA 2: DESPLIEGUE AUTOMÁTICO EN LA INSTANCIA AWS EC2
+  # ------------------------------------------------------------------
+  deploy-to-ec2:
+    name: Conectarse a AWS EC2 y Actualizar Contenedores
+    runs-on: ubuntu-latest
+    needs: build-and-push # Espera a que la Etapa 1 termine con éxito
+    steps:
+      - name: 1. Conexión SSH segura a AWS EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu # Cambia a 'ec2-user' si tu AWS usa Amazon Linux
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Entrar a la carpeta del proyecto en el servidor de la nube
+            mkdir -p ~/proyecto-devops
+            cd ~/proyecto-devops
+
+            # Detener el ecosistema viejo y borrar volúmenes previos para refrescar la BD
+            docker compose down -v
+
+            # Traer las imágenes frescas recién subidas a Docker Hub
+            docker compose pull
+
+            # Levantar todo el ecosistema actualizado en segundo plano
+            docker compose up -d
