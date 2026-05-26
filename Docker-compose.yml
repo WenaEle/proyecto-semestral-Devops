@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Base de Datos (MySQL) - Se construye igual en local y nube
+  # Base de Datos (MySQL)
   db:
     image: mysql:8.0
     container_name: mysql-db
@@ -12,14 +12,10 @@ services:
       - "3306:3306"
     volumes:
       - datos-mysql:/var/lib/mysql
-      - ./db:/docker-entrypoint-initdb.d
 
   # API Ventas
   back-ventas:
-    # En local Docker la compilará, en AWS usará la imagen del AWS CLI (ECR)
-    image: 711817139890.dkr.ecr.TU_REGION.amazonaws.com/api-ventas:latest
-    build:
-      context: ./back-Ventas_SpringBoot
+    image: 711817139890.dkr.ecr.us-east-1.amazonaws.com/api-ventas:latest
     container_name: api-ventas-container
     ports:
       - "8081:8081"
@@ -32,9 +28,7 @@ services:
 
   # API Despachos
   back-despachos:
-    image: 711817139890.dkr.ecr.TU_REGION.amazonaws.com/api-despachos:latest
-    build:
-      context: ./back-Despachos_SpringBoot
+    image: 711817139890.dkr.ecr.us-east-1.amazonaws.com/api-despachos:latest
     container_name: api-despachos-container
     ports:
       - "8082:8082"
@@ -47,9 +41,7 @@ services:
 
   # Frontend (React)
   frontend:
-    image: 711817139890.dkr.ecr.TU_REGION.amazonaws.com/frontend-app:latest
-    build:
-      context: ./front_despacho
+    image: 711817139890.dkr.ecr.us-east-1.amazonaws.com/frontend-app:latest
     container_name: react-frontend-container
     ports:
       - "3000:3000"
