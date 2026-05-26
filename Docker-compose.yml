@@ -17,7 +17,7 @@ services:
     networks:
       - red-proyecto
 
-  # --- CONTENEDOR 1: BACKEND DESPACHOS ---
+  # --- CONTENEDOR 1: BACKEND DESPACHOS ----
   api-despachos:
     container_name: container-despachos
     build:
